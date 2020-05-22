@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <label for="linkage">Linkage:</label>
+    <input name="linkage" id="linkage" />
+    <select name="linkage" id="linkage">
+      <option value="single">single</option>
+    </select>
+    <label for="data">Data:</label>
+    <input type="file" name="data" id="data" />
+    <button onclick="GenerateClusters()">Generate clusters</button>
+    <button id="next">next step</button>
+    <!-- <canvas id="canvas" style="border:1px solid #000000;"> </canvas> -->
+    <!-- <canvas id="canvas"> </canvas> -->
+    <canvas id="canvas" width="800px" height="800px"> </canvas>
+    <!-- <style>
+      canvas {
+        width: 800px;
+        height: 800px;
+      }
+    </style> -->
+  </body>
+  <!-- <script>
+    document.getElementById("canvas").width = document.body.clientWidth;
+  </script> -->
+  <script>
+    const DrawScale = () => {
+      var c = document.getElementById("canvas");
+      var ctx = c.getContext("2d");
+      ctx.moveTo(25, 700);
+      ctx.lineTo(25, 0);
+      ctx.stroke();
+      var scale = 30;
+      for (var y = 700; y >= 0; y -= scale) {
+        ctx.moveTo(25 - 5, y);
+        ctx.lineTo(25 + 5, y);
+        ctx.stroke();
+        ctx.font = "15px Arial";
+        ctx.fillText((700 - y) / scale, 0, y + 20 / 2 / 2);
+      }
+      /*var pos = [10, 700];
+      points.forEach(point => {
+        ctx.moveTo(...pos);
+        ctx.font = "30px Arial";
+        ctx.fillText(point, ...pos);
+        pos[0] += 15 * 2 + 4 + 50;
+      });*/
+    };
+    DrawScale();
+
+    const Distance = (point1, point2) => {
+      var d = 0;
+      point1.forEach((coord, index) => {
+        d += Math.pow(point1[index] - point2[index], 2);
+      });
+      return Math.sqrt(d);
+    };
+
+    const GetPoints = cluster => {
+      if (cluster.dist == undefined) {
+        return [points[cluster]];
+      } else {
+        pointsOfCluster = [];
+        cluster.cluster.forEach(item => {
+          pointsOfCluster = pointsOfCluster.concat(GetPoints(item));
+        });
+        return pointsOfCluster;
+      }
+    };
+
+    const ReadInput = () =>
+      new Promise((resolve, reject) => {
+        var dataInput = document.getElementById("data");
+        const dataFile = dataInput.files[0];
+        const points = [];
+        const reader = new FileReader();
+
+        reader.onload = function(evt) {
+          const input = evt.target.result;
+          var lines = input.split("\n");
+          lines.forEach(line => {
+            var strCoords = line.split(" ");
+            var coords = [];
+            strCoords.forEach(coord => {
+              coords.push(parseInt(coord));
+            });
+            points.push(coords);
+          });
+          resolve(points);
+        };
+        reader.readAsText(dataFile);
+      });
+
+    const NearestClusters = (clusters, linkage) => {
+      result = {};
+      result.dist = Infinity;
+
+      clusters.forEach((cluster1, clusterIndex1) => {
+        clusters.forEach((cluster2, clusterIndex2) => {
+          if (cluster1 != cluster2) {
+            const pointsOfC1 = GetPoints(cluster1);
+            const pointsOfC2 = GetPoints(cluster2);
+
+            if (linkage == "single")
+              pointsOfC1.forEach(pointOfC1 => {
+                pointsOfC2.forEach(pointOfC2 => {
+                  const currDist = Distance(pointOfC1, pointOfC2);
+                  if (currDist < result.dist) {
+                    result.dist = currDist;
+                    result.clusterIndex1 = clusterIndex1;
+                    result.clusterIndex2 = clusterIndex2;
+                  }
+                });
+              });
+            else if (linkage == "complete") {
+              var maxDist = -Infinity;
+              pointsOfC1.forEach(pointOfC1 => {
+                pointsOfC2.forEach(pointOfC2 => {
+                  const currDist = Distance(pointOfC1, pointOfC2);
+                  if (currDist > maxDist) {
+                    maxDist = currDist;
+                  }
+                });
+              });
+
+              if (maxDist < result.dist) {
+                result.dist = maxDist;
+                result.clusterIndex1 = clusterIndex1;
+                result.clusterIndex2 = clusterIndex2;
+              }
+            } else if (linkage == "average") {
+              var currDist = 0;
+              pointsOfC1.forEach(pointOfC1 => {
+                pointsOfC2.forEach(pointOfC2 => {
+                  currDist += Distance(pointOfC1, pointOfC2);
+                });
+              });
+              currDist /= pointsOfC1.length * pointsOfC2.length;
+
+              if (currDist < result.dist) {
+                result.dist = currDist;
+                result.clusterIndex1 = clusterIndex1;
+                result.clusterIndex2 = clusterIndex2;
+              }
+            }
+          }
+        });
+      });
+
+      return result;
+    };
+
+    /*ClusterHeight = clusters => {
+      var height = 0;
+      var child = clusters;
+      while (child.dist != 0) {
+        height += child.dist;
+        child = child.cluster[0];
+      }
+      return height;
+    };*/
+
+    var points = [];
+
+    var clusters = [];
+    const GenerateClusters = async () => {
+      points = await ReadInput();
+      points.forEach((point, index) => {
+        clusters.push({
+          cluster: [index],
+          dist: 0,
+          topPoint: [35 + (15 * 2 + 4 + 50) * index + (15 * 2 + 4) / 2, 700]
+        });
+      });
+      //console.log(clusters);
+      var c = document.getElementById("canvas");
+      var ctx = c.getContext("2d");
+      var pos = [35, 700 + 30];
+      points.forEach(point => {
+        //ctx.moveTo(...pos);
+        ctx.font = "30px Arial";
+        ctx.fillText(point, ...pos);
+        pos[0] += 15 * 2 + 4 + 50;
+      });
+      document.getElementById("next").onclick = () => {
+        if (clusters.length != 1) {
+          var nearest = NearestClusters(
+            clusters,
+            document.getElementById("linkage").value
+          );
+          const newCluster = {
+            cluster: [
+              clusters[nearest.clusterIndex1],
+              clusters[nearest.clusterIndex2]
+            ],
+            dist: nearest.dist
+          };
+
+          var topPoint1 = clusters[nearest.clusterIndex1].topPoint;
+          var topPoint2 = clusters[nearest.clusterIndex2].topPoint;
+
+          //clusters are on the same axis on dendogram
+          if (topPoint1[0] == topPoint2[0]) {
+            //left line
+            ctx.moveTo(topPoint1[0], topPoint1[1]);
+            ctx.lineTo(topPoint1[0], 700 - nearest.dist * 30);
+            ctx.stroke();
+
+            //right line
+            ctx.moveTo(topPoint2[0] + 10, topPoint2[1]);
+            ctx.lineTo(topPoint2[0] + 10, 700 - nearest.dist * 30);
+            ctx.stroke();
+
+            //top line
+            ctx.moveTo(topPoint1[0], 700 - nearest.dist * 30);
+            ctx.lineTo(topPoint2[0] + 10, 700 - nearest.dist * 30);
+            ctx.stroke();
+
+            newCluster.topPoint = [
+              (topPoint1[0] + (topPoint2[0] + 10)) / 2,
+              700 - nearest.dist * 30
+            ];
+          } else {
+            //left line
+            ctx.moveTo(topPoint1[0], topPoint1[1]);
+            ctx.lineTo(topPoint1[0], 700 - nearest.dist * 30);
+            ctx.stroke();
+
+            //right line
+            ctx.moveTo(topPoint2[0] /*+ 10*/, topPoint2[1]);
+            ctx.lineTo(topPoint2[0] /*+ 10*/, 700 - nearest.dist * 30);
+            ctx.stroke();
+
+            //top line
+            ctx.moveTo(topPoint1[0], 700 - nearest.dist * 30);
+            ctx.lineTo(topPoint2[0] /*+ 10*/, 700 - nearest.dist * 30);
+            ctx.stroke();
+
+            newCluster.topPoint = [
+              (clusters[nearest.clusterIndex1].topPoint[0] +
+                clusters[nearest.clusterIndex2].topPoint[0]) /
+                2,
+              700 - nearest.dist * 30
+            ];
+          }
+
+          clusters = clusters.filter(
+            (val, index) =>
+              index != nearest.clusterIndex1 && index != nearest.clusterIndex2
+          );
+
+          clusters.push(newCluster);
+        }
+      };
+    };
+  </script>
+</html>

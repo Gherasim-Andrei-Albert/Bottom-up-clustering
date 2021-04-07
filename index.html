@@ -8,9 +8,10 @@
   </head>
   <body>
     <label for="linkage">Linkage:</label>
-    <input name="linkage" id="linkage" />
     <select name="linkage" id="linkage">
       <option value="single">single</option>
+      <option value="single">complete</option>
+      <option value="single">average</option>
     </select>
     <label for="data">Data:</label>
     <input type="file" name="data" id="data" />
@@ -94,7 +95,16 @@
           });
           resolve(points);
         };
-        reader.readAsText(dataFile);
+
+        if(dataFile)
+          reader.readAsText(dataFile);
+        else
+          resolve([
+            [1, 1, 4],
+            [2, 2, 2],
+            [4, 4, 1],
+            [7, 7, 3]
+          ]);
       });
 
     const NearestClusters = (clusters, linkage) => {

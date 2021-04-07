@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Bottom up clustering</title>
+    <style>
+      .canvas__wraper{
+        overflow-y: auto;
+      }
+    </style>
   </head>
   <body>
     <label for="linkage">Linkage:</label>
@@ -19,7 +24,9 @@
     <button id="next">next step</button>
     <!-- <canvas id="canvas" style="border:1px solid #000000;"> </canvas> -->
     <!-- <canvas id="canvas"> </canvas> -->
-    <canvas id="canvas" width="800px" height="800px"> </canvas>
+    <div class="canvas__wraper">
+      <canvas id="canvas" width="800px" height="800px"> </canvas>
+    </div>
     <!-- <style>
       canvas {
         width: 800px;
